@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "src\\Long.Game\\Long.Game.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Long.Login\\Long.Login.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Long.Ai\\Long.Ai.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
