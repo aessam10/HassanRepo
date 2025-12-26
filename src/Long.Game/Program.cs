@@ -104,15 +104,16 @@ namespace Long.Game
                 Services.Randomness.StartAsync(CancellationToken.None),
                 NDDiffieHellman.ProbablePrimes.StartAsync(CancellationToken.None)
             };
-            Task.WaitAll(tasks.ToArray());
 
+            Task.WaitAll(tasks.ToArray());
+            CustomAlgorithm.InitializeSandBoxes();
             if (!await Kernel.InitializeAsync(serverSettings))
             {
                 return INITIALIZATION_ERROR;
             }
 
             logger.Information("Server initialized and ready to login!");
-
+            
             await CommandLineAsync();
 
             await ModuleManager.OnServerShutdownModulesAsync();
