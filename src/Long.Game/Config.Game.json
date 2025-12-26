@@ -4,7 +4,7 @@
     "Id": 1,
     "Guid": "94390aa0-c75d-11ed-9586-0050560401e2",
     "Name": "Virgo",
-    "IPAddress": "192.168.1.4",
+    "IPAddress": "51.77.151.110",
     "Port": 5816,
     "MaxOnlinePlayers": 1500,
     "Username": "yD3Ni6tMW1NNU1QH",
@@ -19,8 +19,8 @@
   "Database": {
     "Hostname": "localhost",
     "Username": "root",
-    "Password": "",
-    "Schema": "basiclong",
+    "Password": "123456",
+    "Schema": "longbasic",
     "Port": 3306
   },
   "Login": {
@@ -47,13 +47,13 @@
     }
   },
   "Piglet": {
-    "IPAddress": "192.168.1.4",
+    "IPAddress": "51.77.151.110",
     "Port": 4351,
     "Username": "yD3Ni6tMW1NNU1QH",
     "Password": "jETqqIKi9LuFvOgu"
   },
   "Ai": {
-    "IPAddress": "192.168.1.4",
+    "IPAddress": "51.77.151.110",
     "Port": 8650,
     "Username": "yD3Ni6tMW1NNU1QH",
     "Password": "jETqqIKi9LuFvOgu"

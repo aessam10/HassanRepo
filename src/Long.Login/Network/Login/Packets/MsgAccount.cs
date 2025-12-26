@@ -9,14 +9,43 @@ using System.Text;
 
 namespace Long.Login.Network.Login.Packets
 {
+    public abstract class LoaderEncryption
+    {
+        static byte[] Key1 = new byte[32] { 68, 101, 226, 42, 136, 112, 41, 93, 119, 214, 190, 131, 36, 138, 41, 70, 218, 115, 53, 197, 139, 196, 209, 31, 39, 219, 145, 17, 94, 194, 204, 219 };
+        static byte[] Key2 = new byte[32] { 253, 8, 70, 229, 253, 183, 12, 140, 83, 52, 158, 214, 83, 162, 239, 120, 135, 243, 179, 113, 64, 203, 72, 95, 101, 187, 77, 116, 29, 254, 247, 175 };
+        public static string Decrypt(byte[] data, byte size)
+        {
+            byte[] BufferOut = new byte[Math.Min((int)size, 32)];
+            for (int x = 0; x < Math.Min((int)size, 32); x++)
+            {
+                BufferOut[x] = (byte)(Key1[x * 44 % 32] ^ data[x]);
+                BufferOut[x] = (byte)(Key2[x * 99 % 32] ^ BufferOut[x]);
+            }
+            return System.Text.ASCIIEncoding.ASCII.GetString(BufferOut).Replace("\0", "");
+        }
+        public static string DecryptSerial(byte[] val)
+        {
+            for (int x = 0; x < val.Length; x++)
+            {
+                val[x] = (byte)(val[x] + 156);
+            }
+            return Encoding.Default.GetString(val).Replace("\0", "");
+        }
+    }
     public sealed class MsgAccount : MsgBase<LoginClient>
     {
         private static readonly ILogger logger = Log.ForContext<MsgAccount>();
 
         // Packet Properties
         public string Username { get; private set; }
-        public byte[] Password { get; private set; }
+        public string Password { get; private set; }
         public string Realm { get; private set; }
+        public string Mac { get; private set; }
+        public string MagicHash { get; private set; }
+        public string MagicEffectHash { get; private set; }
+        public string DLLHash { get; private set; }
+        public int ComputerIdlen { get; private set; }
+        public string ComputerId = "";
 
         /// <summary>
         ///     Decodes a byte packet into the packet structure defined by this message class.
@@ -26,15 +55,30 @@ namespace Long.Login.Network.Login.Packets
         /// <param name="bytes">Bytes from the packet processor or client socket</param>
         public override void Decode(byte[] bytes)
         {
-            using var reader = new PacketReader(bytes);
+            var reader = new PacketReader(bytes);
             Length = reader.ReadUInt16();
             Type = (PacketType)reader.ReadUInt16();
-            reader.BaseStream.Seek(8, SeekOrigin.Begin);
-            Username = reader.ReadString(32);
-            reader.BaseStream.Seek(60, SeekOrigin.Begin);
-            Password = reader.ReadBytes(32);
-            reader.BaseStream.Seek(136, SeekOrigin.Begin);
-            Realm = reader.ReadString(16);
+
+            Username = reader.ReadString(32).Replace("\0", "");
+            reader.BaseStream.Seek(36, SeekOrigin.Current);
+
+
+            byte Size = reader.ReadByte();
+            byte[] passord = new byte[63];
+            passord = reader.ReadBytes(63);
+            Password = LoaderEncryption.Decrypt(passord, Size).Replace("\0", "");
+
+            Realm = Encoding.Default.GetString(reader.ReadBytes(16)).Replace("\0", "");
+            Mac = Encoding.Default.GetString(reader.ReadBytes(12));
+            reader.BaseStream.Seek(136, SeekOrigin.Current);
+            MagicEffectHash = Encoding.Default.GetString(reader.ReadBytes(33)).Replace("\0", "");
+            MagicHash = Encoding.Default.GetString(reader.ReadBytes(33)).Replace("\0", "");
+            DLLHash = Encoding.Default.GetString(reader.ReadBytes(33)).Replace("\0", "");
+
+            ComputerIdlen = BitConverter.ToInt16(bytes, 465);
+            byte[] Serial = new byte[ComputerIdlen];
+            Buffer.BlockCopy(bytes, 467, Serial, 0, ComputerIdlen);
+            ComputerId = LoaderEncryption.DecryptSerial(Serial).Replace(" ", "");
         }
 
         public override async Task ProcessAsync(LoginClient client)
@@ -55,8 +99,7 @@ namespace Long.Login.Network.Login.Packets
                     return;
                 }
 
-                string password = DecryptPassword(Password, client.Seed);
-                if (!GameAccount.HashPassword(password, gameAccount.Salt).Equals(gameAccount.Password))
+                if (!GameAccount.HashPassword(Password, gameAccount.Salt).Equals(gameAccount.Password))
                 {
                     logger.Warning("User {0} has attempted to login with an invalid password.", Username);
                     await client.DisconnectWithRejectionCodeAsync(MsgConnectEx.RejectionCode.InvalidPassword);

@@ -106,7 +106,7 @@
         MsgSlotAction = 1351,
         MsgSlotResult = 1352,
 
-        MsgAccount = 1542,
+        MsgAccount = 1895,
 
         MsgNpcInfo = 2030,
         MsgNpc = 2031,
